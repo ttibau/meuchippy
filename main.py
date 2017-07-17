@@ -59,26 +59,25 @@ def conexao_db():
 
 
 # Insere os dados ao banco
-def insert_db(usuario, texto, data):
+def insert_db(usuario, texto, data, id_tweet):
     conn = conexao_db()
     cursor = conn.cursor()
     print("Inserindo dados")
     try:
-        cursor.execute("INSERT INTO tweets (usuario, texto, data) VALUES (%s, %s, %s)", (usuario, texto, data))
+        cursor.execute("INSERT INTO tweets (usuario, texto, data, id_tweet) VALUES (%s, %s, %s, %s)", (usuario, texto, data, id_tweet))
         conn.commit()
     except:
         print ("Deu erro ao salvar os dados na tabela")
 
 
-insert_db(usuario='asduf', texto='Meu piru de rabiola', data=datetime.datetime.now())
-
-#hashtags = hashtags('#Alemanha')
-#mcv = hashtags['statuses']
-#for dado in mcv:
-    #print ('ID: ' + str(dado['id']))
-    #print ('Usuário: ' + dado['user']['screen_name'])
-    #print ('Tweet: ' + str(dado['text']))
-    #retweet(str(dado['id']), dado['user']['screen_name'])
-
-
-#consulta = json.loads(response_decoded)
+hashtags = hashtags('#Alemanha')
+mcv = hashtags['statuses']
+for dado in mcv:
+    tweet_usuario = str(dado['user']['screen_name'])
+    tweet_id = str(dado['id'])
+    tweet_texto = str(dado['text'])
+    try:
+        retweet(str(dado['id']), dado['user']['screen_name'])
+        insert_db(usuario=tweet_usuario, texto=tweet_texto, data=datetime.datetime.now(), id_tweet=tweet_id)
+    except:
+        print("Ocorreu um erro ao retwetar ou ao salvar os dados no banco")
