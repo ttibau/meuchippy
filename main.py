@@ -56,7 +56,6 @@ def conexao_db():
     return connection
 
 
-
 # Insere os dados ao banco
 def insert_db(usuario, texto, data, id_tweet, hashtag):
     conn = conexao_db()
@@ -68,22 +67,37 @@ def insert_db(usuario, texto, data, id_tweet, hashtag):
     except:
         print ("Deu erro ao salvar os dados na tabela")
 
+
 # Método que vai verificar se o tweet foi retweetado por nós nas últimas 24h
-def verifica_tweet(id):
-    pass
-    # Faz select no banco passando o id_tweet
-    #
+def verifica_tweet(id_tweet):
+    conn = conexao_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM tweets WHERE id_tweet = '{0}'".format(id_tweet))
+    tweets = cursor.fetchall()
+    verificacao_tweet = False
+    for tweet in tweets:
+        data_tweet = tweet[3]
+        data_atual = datetime.datetime.now()
+        if(data_tweet.day == data_atual.day and data_tweet.month == data_atual.month):
+            verificacao_tweet = False
+        else:
+            verificacao_tweet = True
+    return verificacao_tweet
 
 
-hashtags = hashtags('#Alemanha')
+hashtag_query = '#Alemanha'
+hashtags = hashtags(hashtag_query) # Vai pegar os tweets com essa hashtag
 mcv = hashtags['statuses']
 for dado in mcv:
     tweet_usuario = str(dado['user']['screen_name'])
     tweet_id = str(dado['id'])
     tweet_texto = str(dado['text'])
-    # Se (if) o id do retweet já estiver sido retweetado nas últimas 24h, não fazer o retweet
-    try:
-        retweet(str(dado['id']), dado['user']['screen_name'])
-        insert_db(usuario=tweet_usuario, texto=tweet_texto, data=datetime.datetime.now(), id_tweet=tweet_id, hashtag='#Alemanha')
-    except:
-        print("Ocorreu um erro ao retwetar ou ao salvar os dados no banco")
+    twitter_verificado = verifica_tweet(tweet_id) # Vai retornar true, se o tweet não estiver sido feito nas últimas 24h
+    if (twitter_verificado == True)
+        try:
+            retweet(str(dado['id']), dado['user']['screen_name'])
+            insert_db(usuario=tweet_usuario, texto=tweet_texto, data=datetime.datetime.now(), id_tweet=tweet_id, hashtag=hashtag_query)
+        except:
+            print("Ocorreu um erro ao retwetar ou ao salvar os dados no banco")
+    else:
+        print("O tweet já foi feito nas últimas 24h, não será salvo no banco")
