@@ -7,5 +7,6 @@ CREATE TABLE tweets (
   usuario VARCHAR(100) NOT NULL,
   texto VARCHAR(150) NOT NULL,
   data TIMESTAMP NOT NULL,
-  id_tweet VARCHAR(100) NOT NULL
+  id_tweet VARCHAR(100) NOT NULL,
+  hashtag VARCHAR(50) NOT NULL
 )

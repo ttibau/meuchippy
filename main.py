@@ -43,7 +43,7 @@ def tweepy_auth(ck, cs, tk, ts):
 # retweeta usando o tweepy
 def retweet(id_usuario, nome_usuario):
     api = tweepy_auth(ck=CONSUMER_KEY, cs=CONSUMER_SECRET, tk=TOKEN_KEY, ts=TOKEN_SECRET)
-    api.update_status(status="@" + nome_usuario + " conheça o www.meuchipdeviagem.com.br", in_reply_to_status_id=int(id_usuario))
+    api.update_with_media(filename='folder.jpg', status="@" + nome_usuario + " conheça o www.meuchipdeviagem.com.br", in_reply_to_status_id=int(id_usuario))
     print('Enviado uma resposta para o tweet id: ' + id_usuario)
 
 
@@ -51,7 +51,6 @@ def retweet(id_usuario, nome_usuario):
 def conexao_db():
     try:
         connection = psycopg2.connect("dbname='twitterdb' user='twitter_user' host='localhost' password='abc123'")
-        print("Conectado ao banco de dados com sucesso")
     except:
         print ("Ocorreu um erro ao conectar com o banco de dados")
     return connection
@@ -59,15 +58,21 @@ def conexao_db():
 
 
 # Insere os dados ao banco
-def insert_db(usuario, texto, data, id_tweet):
+def insert_db(usuario, texto, data, id_tweet, hashtag):
     conn = conexao_db()
     cursor = conn.cursor()
     print("Inserindo dados")
     try:
-        cursor.execute("INSERT INTO tweets (usuario, texto, data, id_tweet) VALUES (%s, %s, %s, %s)", (usuario, texto, data, id_tweet))
+        cursor.execute("INSERT INTO tweets (usuario, texto, data, id_tweet, hashtag) VALUES (%s, %s, %s, %s, %s)", (usuario, texto, data, id_tweet, hashtag))
         conn.commit()
     except:
         print ("Deu erro ao salvar os dados na tabela")
+
+# Método que vai verificar se o tweet foi retweetado por nós nas últimas 24h
+def verifica_tweet(id):
+    pass
+    # Faz select no banco passando o id_tweet
+    #
 
 
 hashtags = hashtags('#Alemanha')
@@ -76,8 +81,9 @@ for dado in mcv:
     tweet_usuario = str(dado['user']['screen_name'])
     tweet_id = str(dado['id'])
     tweet_texto = str(dado['text'])
+    # Se (if) o id do retweet já estiver sido retweetado nas últimas 24h, não fazer o retweet
     try:
         retweet(str(dado['id']), dado['user']['screen_name'])
-        insert_db(usuario=tweet_usuario, texto=tweet_texto, data=datetime.datetime.now(), id_tweet=tweet_id)
+        insert_db(usuario=tweet_usuario, texto=tweet_texto, data=datetime.datetime.now(), id_tweet=tweet_id, hashtag='#Alemanha')
     except:
         print("Ocorreu um erro ao retwetar ou ao salvar os dados no banco")
