@@ -5,6 +5,7 @@ import urllib
 import tweepy
 from keys import *
 import psycopg2
+import datetime
 
 
 # Faz a autenticação no twitter
@@ -46,22 +47,37 @@ def retweet(id_usuario, nome_usuario):
     print('Enviado uma resposta para o tweet id: ' + id_usuario)
 
 
+# Conecta ao banco de dados
 def conexao_db():
     try:
         connection = psycopg2.connect("dbname='twitterdb' user='twitter_user' host='localhost' password='abc123'")
         print("Conectado ao banco de dados com sucesso")
     except:
         print ("Ocorreu um erro ao conectar com o banco de dados")
+    return connection
 
-conexao_db()
 
-hashtags = hashtags('#Alemanha')
 
-mcv = hashtags['statuses']
-for dado in mcv:
-    print ('ID: ' + str(dado['id']))
-    print ('Usuário: ' + dado['user']['screen_name'])
-    print ('Tweet: ' + str(dado['text']))
+# Insere os dados ao banco
+def insert_db(usuario, texto, data):
+    conn = conexao_db()
+    cursor = conn.cursor()
+    print("Inserindo dados")
+    try:
+        cursor.execute("INSERT INTO tweets (usuario, texto, data) VALUES (%s, %s, %s)", (usuario, texto, data))
+        conn.commit()
+    except:
+        print ("Deu erro ao salvar os dados na tabela")
+
+
+insert_db(usuario='asduf', texto='Meu piru de rabiola', data=datetime.datetime.now())
+
+#hashtags = hashtags('#Alemanha')
+#mcv = hashtags['statuses']
+#for dado in mcv:
+    #print ('ID: ' + str(dado['id']))
+    #print ('Usuário: ' + dado['user']['screen_name'])
+    #print ('Tweet: ' + str(dado['text']))
     #retweet(str(dado['id']), dado['user']['screen_name'])
 
 
