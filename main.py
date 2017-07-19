@@ -5,8 +5,10 @@ import urllib
 import tweepy
 from keys import *
 import psycopg2
+from datetime import date
 import datetime
-
+import sys
+import time
 
 # Faz a autenticação no twitter
 def conexao_twitter():
@@ -43,7 +45,7 @@ def tweepy_auth(ck, cs, tk, ts):
 # retweeta usando o tweepy
 def retweet(id_usuario, nome_usuario):
     api = tweepy_auth(ck=CONSUMER_KEY, cs=CONSUMER_SECRET, tk=TOKEN_KEY, ts=TOKEN_SECRET)
-    api.update_with_media(filename='folder.jpg', status="@" + nome_usuario + " conheça o www.meuchipdeviagem.com.br", in_reply_to_status_id=int(id_usuario))
+    api.update_with_media(filename='folder.jpg', status="@" + nome_usuario + " quer viajar e já ter seu chip de celular configurado aqui mesmo no Brasil? Acesse: http://bit.ly/meuchipdeviagem O MELHOR PREÇO", in_reply_to_status_id=int(id_usuario))
     print('Enviado uma resposta para o tweet id: ' + id_usuario)
 
 
@@ -68,36 +70,46 @@ def insert_db(usuario, texto, data, id_tweet, hashtag):
         print ("Deu erro ao salvar os dados na tabela")
 
 
-# Método que vai verificar se o tweet foi retweetado por nós nas últimas 24h
+# Método que vai verificar se o id do tweet já está no banco de dados
+# Se retornar falso, o tweet já foi enviado hoje, logo não deve ser feito o retweet
 def verifica_tweet(id_tweet):
     conn = conexao_db()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM tweets WHERE id_tweet = '{0}'".format(id_tweet))
     tweets = cursor.fetchall()
-    verificacao_tweet = False
     for tweet in tweets:
-        data_tweet = tweet[3]
-        data_atual = datetime.datetime.now()
-        if(data_tweet.day == data_atual.day and data_tweet.month == data_atual.month):
-            verificacao_tweet = False
+        hoje = date.today().toordinal()
+        data_banco = tweet[3].toordinal()
+        print (hoje, data_banco)
+        if (hoje <= data_banco):
+            return False
+        elif(tweet == None):
+            return False
         else:
-            verificacao_tweet = True
-    return verificacao_tweet
+            return True
 
-
-hashtag_query = '#Alemanha'
+hashtag_query = str(sys.argv[1])
+print (hashtag_query)
 hashtags = hashtags(hashtag_query) # Vai pegar os tweets com essa hashtag
 mcv = hashtags['statuses']
+print ("Quantidade coletada: ", len(mcv))
 for dado in mcv:
     tweet_usuario = str(dado['user']['screen_name'])
     tweet_id = str(dado['id'])
+
     tweet_texto = str(dado['text'])
-    twitter_verificado = verifica_tweet(tweet_id) # Vai retornar true, se o tweet não estiver sido feito nas últimas 24h
-    if (twitter_verificado == True)
-        try:
-            retweet(str(dado['id']), dado['user']['screen_name'])
-            insert_db(usuario=tweet_usuario, texto=tweet_texto, data=datetime.datetime.now(), id_tweet=tweet_id, hashtag=hashtag_query)
-        except:
-            print("Ocorreu um erro ao retwetar ou ao salvar os dados no banco")
-    else:
-        print("O tweet já foi feito nas últimas 24h, não será salvo no banco")
+    tweet_verificacao = verifica_tweet(tweet_id)
+    print (tweet_verificacao)
+    if (tweet_verificacao == True):
+        retweet(str(dado['id']), dado['user']['screen_name'])
+        insert_db(usuario=tweet_usuario, texto=tweet_texto, data=datetime.datetime.now(), id_tweet=tweet_id, hashtag=hashtag_query)
+        print("Retweetado e salvo no banco, aguardando mais 15 segundos para retweetar novamente")
+        time.sleep(30)
+    elif(tweet_verificacao == False):
+        print("Não salva no banco, o tweet já foi feito hoje")
+    elif(tweet_verificacao == None):
+        print("O id é inexistente no banco")
+        retweet(str(dado['id']), dado['user']['screen_name'])
+        insert_db(usuario=tweet_usuario, texto=tweet_texto, data=datetime.datetime.now(), id_tweet=tweet_id, hashtag=hashtag_query)
+        print("Retweetado e salvo no banco, aguardando mais 15 segundos para retweetar novamente")
+        time.sleep(30)
